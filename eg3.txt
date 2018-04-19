@@ -1,0 +1,68 @@
+While working on my solution of the third assignment, I found out that understanding what happens is much easier if we have the tunnel process print out a message from inside a critical section each time the direction of traffic changes. So the body of my tunnel process looks now like:
+
+ 
+
+while (done == 0) {
+    pthread_mutex_lock(&traffic_lock);
+    traffic = 'W';
+printf("The tunnel is now open to Whittier-bound traffic.\n");
+    pthread_cond_broadcast(&wb_can);
+    pthread_mutex_unlock(&traffic_lock);
+    sleep(5);
+    pthread_mutex_lock(&traffic_lock);
+     traffic = 'N';
+      printf("The tunnel is now closed to ALL traffic.\n");
+      pthread_mutex_unlock(&traffic_lock);
+        sleep(5);
+...
+} // while
+
+
+It worked so well for me that I have decided to make printing these extra lines a requirement. So the correct output for: 
+
+ 
+
+10
+1 WB 1
+2 BB 2
+1 WB 1
+
+ 
+
+is
+
+ 
+
+The tunnel is now open to Whittier-bound traffic.
+
+Car #1 going to Whittier arrives at the tunnel.
+
+Car #1 going to Whittier enters the tunnel.
+
+Car #1 going to Whittier exits the tunnel.
+
+Car #2 going to Bear Valley arrives at the tunnel.
+
+Car # 3 going to Whittier arrives at the tunnel.
+
+Car # 3 going to Whittier enters the tunnel.
+
+The tunnel is now closed to ALL traffic.
+
+Car # 3 going to Whittier exits the tunnel.
+
+The tunnel is now open to Bear Valley-bound traffic.
+
+Car # 2 going to Bear Valley enters the tunnel.
+
+Car # 2 going to Bear Valley exits the tunnel.
+
+ 
+
+1 car(s) going to Bear Valley arrived at the tunnel.
+
+2 car(s) going to Whittier arrived at the tunnel.
+
+ 
+
+I apologize in advance for the trouble the change may cause to some of you but believe it will make easier for all of you check the correctness of your programs.
