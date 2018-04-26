@@ -1,5 +1,6 @@
 #include <iostream>
 #include <string>
+#include <vector> 
 #include <stdlib.h>
 #include <pthread.h>
 #include <queue>
@@ -15,34 +16,56 @@ using namespace std;
 static int currentNumOfCarsInTunnel;
 static int maxNumOfCarsAllowedInTunnel;
 static pthread_mutex_t trafficLock;
-static pthread_cond_t ok = PTHREAD_COND_INITIALIZER;
+static pthread_cond_t wb_can = PTHREAD_COND_INITIALIZER;
+static pthread_cond_t bb_can = PTHREAD_COND_INITIALIZER;
 static int carCounter;
 static char traffic; 
 bool done; 
 
 
-struct car
+struct vehicle
 {
-	string goingTo;
+	string isGoingTo;
+	string ID; 
 	int arrivalTime;
     int tunnelTime; 
 	int exitTime;
+	bool delayed = false; 
 };
 
 
 bool enterTunnel(int carCounter)
 {
+	cout << "entering tunnel portion of program" << endl;
+	// while(done == 0) { 
+	// 	pthread_mutex_lock(&trafficLock);
+	// 	traffic = 'W';
+	// 	cout << "The tunnel is now open to Whittier bound traffic. \n" << endl;
+	// 	pthread_cond_broadcast(&wb_can);
+	// 	pthread_mutex_unlock(&trafficLock);
+	// 	sleep(5);
+	// 	traffic = 'N';
+	// 	cout << "The tunnel is now closed to ALL traffic.\n" << endl;
+	// 	pthread_mutex_unlock(&trafficLock);
+	// 	sleep(5);
+	// 	cout << "The tunnel is now open to Bear Valley bound traffic. \n" << endl;
+	// 	pthread_cond_broadcast(&wb_can);
+	// 	pthread_mutex_unlock(&trafficLock);
+	// 	sleep(5);
+		
+	// }
 
+	// will not make it to this code ...
 	if (carCounter > maxNumOfCarsAllowedInTunnel)
 		return false;
 
 
 	pthread_mutex_lock(&trafficLock);
 	while((carCounter + currentNumOfCarsInTunnel) > maxNumOfCarsAllowedInTunnel)
-		pthread_cond_wait(&ok, &trafficLock);
+		pthread_cond_wait(&wb_can, &trafficLock);
 
-	currentNumOfCarsInTunnel = currentNumOfCarsInTunnel + carCounter;
-	pthread_cond_signal(&ok);
+	currentNumOfCarsInTunnel +=  carCounter;
+	pthread_cond_signal(&wb_can);
 	pthread_mutex_unlock(&trafficLock);
 
 	return true;
@@ -51,27 +74,27 @@ bool enterTunnel(int carCounter)
 void exitTunnel(int carCounter)
 {
 	pthread_mutex_lock(&trafficLock);
-	currentNumOfCarsInTunnel = currentNumOfCarsInTunnel - carCounter;
-	pthread_cond_signal(&ok);
+	currentNumOfCarsInTunnel -= carCounter;
+	pthread_cond_signal(&wb_can);
 	pthread_mutex_unlock(&trafficLock);
 }
 
 void *cars(void *arg)
 {
-	car cars = *((car*) arg);
+	vehicle cars = *((vehicle*) arg);
 
-	cout << "Car going to "<< cars.goingTo << " arrives at the tunnel"<< endl;
+	cout << "\nCar # " << cars.ID << " going to "<< cars.isGoingTo << " arrives at the tunnel"<< endl;
 
 	if (enterTunnel(carCounter) == false)
 	{
-		cout << cars.goingTo << " " << " exceeds number of cars allowed in the tunnel " << endl;
+		cout << cars.isGoingTo << " " << " exceeds number of cars allowed in the tunnel " << endl;
     }
 	else
 	{
-		cout << cars.goingTo << " is going through the tunnel" << endl;
+		cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " is going through the tunnel" << endl;
 		sleep(cars.exitTime);
-	    exitTunnel(carCounter);
-	    cout << cars.goingTo << " is leaving the tunnel" << endl;
+	    // exitTunnel(carCounter);
+	    cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " is leaving the tunnel" << endl;
 	 
 	}
 	
@@ -82,44 +105,43 @@ void *cars(void *arg)
 void runProgram()
 {
 	pthread_mutex_init(&trafficLock, NULL);
-
-	deque<car> listOfCars;
-
+	deque<vehicle> listOfCars; 
 	string line;
 
+
     getline(cin, line);
+
     stringstream stream(line);
-    stream >> maxNumOfCarsAllowedInTunnel;
+    // read in the first line to get the amount of cars allowed 
+	stream >> maxNumOfCarsAllowedInTunnel;
     cout << "\nmaximum number of cars allowed in tunnel: " << maxNumOfCarsAllowedInTunnel << endl; 
   
 	while (getline(cin, line))
 	{
 		stringstream stream(line);
-
-		car vehicle;
-        stream >> vehicle.arrivalTime  >>  vehicle.goingTo >> vehicle.tunnelTime;
-
-        cout << "\nCar arrival time: " << vehicle.arrivalTime  << endl; 
-        cout << "Car is going to: " << vehicle.goingTo << endl; 
-        vehicle.exitTime = vehicle.arrivalTime + vehicle.tunnelTime; 
-        cout << "Car will exit the tunnel at: " << vehicle.exitTime  << endl; 
-        cout << " " << endl; 	
-        listOfCars.push_back(vehicle);
+		// Instantiate a new vehicle named car and store corresponding data into it
+		vehicle car;
+        stream >> car.arrivalTime  >>  car.isGoingTo >> car.tunnelTime;
 		carCounter++;
-        cout << "the number of cars in total is: " << carCounter << endl;
+		car.ID = std::to_string(carCounter);
+        
+		// add cars to dequeue 
+		listOfCars.push_back(car);
+		
+      
 	}
 
-	deque<pthread_t> listOfthings;
+	deque<pthread_t> listCarsForTunnel; 
 
 	for (int i = 0; i < listOfCars.size(); i++)
 	{
 		sleep(listOfCars.at(i).arrivalTime);
 		pthread_t tid;
 		pthread_create(&tid, NULL, cars, (void *) &listOfCars.at(i));
-		listOfthings.push_back(tid);
+		listCarsForTunnel.push_back(tid);
 	}
-	for (int i = 0; i < listOfthings.size(); i++)
-		pthread_join(listOfthings[i], NULL);
+	for (int i = 0; i < listCarsForTunnel.size(); i++)
+		pthread_join(listCarsForTunnel[i], NULL);
 }
 
 int main (int argc, char *argv[] )   //char *argv[])
