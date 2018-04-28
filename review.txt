@@ -1,0 +1,3 @@
+review notes 
+
+- calculate improper integrals using residue theory 

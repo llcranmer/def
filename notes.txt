@@ -1,0 +1,34 @@
+	// cout << "\nCar # " << cars.ID << " going to "<< cars.isGoingTo << " arrives at the tunnel"<< endl;
+
+	// if (enterTunnel(carCounter) == false)
+	// {
+	// 	cout << cars.isGoingTo << " " << " exceeds number of cars allowed in the tunnel " << endl;
+    // }
+	// else
+	// {
+	// 	cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " is going through the tunnel" << endl;
+	// 	sleep(cars.exitTime);
+	//     exitTunnel(carCounter);
+	//     cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " is leaving the tunnel" << endl;
+	 
+	// }
+
+
+
+	// while(done == 0) { 
+	// 	pthread_mutex_lock(&trafficLock);
+	// 	traffic = 'W';
+	// 	cout << "The tunnel is now open to Whittier bound traffic. \n" << endl;
+	// 	pthread_cond_broadcast(&wb_can);
+	// 	pthread_mutex_unlock(&trafficLock);
+	// 	sleep(5);
+	// 	traffic = 'N';
+	// 	cout << "The tunnel is now closed to ALL traffic.\n" << endl;
+	// 	pthread_mutex_unlock(&trafficLock);
+	// 	sleep(5);
+	// 	cout << "The tunnel is now open to Bear Valley bound traffic. \n" << endl;
+	// 	pthread_cond_broadcast(&wb_can);
+	// 	pthread_mutex_unlock(&trafficLock);
+	// 	sleep(5);
+		
+	// }
