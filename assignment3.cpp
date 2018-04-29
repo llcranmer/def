@@ -35,18 +35,14 @@ struct vehicle
 	string ID; 
 	int arrivalTime;
     int tunnelTime; 
-	int exitTime;
 	bool delayed = false; 
 };
 
-
 // does not have access to the cars and their data ..
-
 void *checkTunnelDirection(void *arg){
 	
 	while(done == 0) { 
 
-		cout << "Starting the tunnel cycles " << endl; 
 		pthread_mutex_lock(&trafficLock);
 		trafficDirection = "WB";
 		cout << "The tunnel is now open to Whittier bound traffic. \n" << endl;
@@ -60,17 +56,19 @@ void *checkTunnelDirection(void *arg){
 		sleep(5);
 	
 		cout << "The tunnel is now open to Bear Valley bound traffic. \n" << endl;
-		trafficDirection ="WB";
+		trafficDirection ="BB";
 		pthread_cond_broadcast(&wakeUp);
 		pthread_mutex_unlock(&trafficLock);
 		sleep(5);
 
-		trafficDirection = 'N';
+		trafficDirection = "N";
 		cout << "The tunnel is now closed to ALL traffic.\n" << endl;
 		pthread_mutex_unlock(&trafficLock);
 		sleep(5);
 		
 	}
+
+	pthread_exit(NULL);
 }
 
 
@@ -79,40 +77,64 @@ void *checkTunnelDirection(void *arg){
 void *cars(void *arg)
 {
 	vehicle cars = *((vehicle*) arg);
-
 	// print message : "arrived at tunnel"
 	cout << "\nCar # " << cars.ID << " going to "<< cars.isGoingTo << " arrives at the tunnel"<< endl;
-
     if(trafficDirection == cars.isGoingTo && currentNumOfCarsInTunnel < maxNumOfCarsAllowedInTunnel)
-	{
+	{	
+		// entering the tunnel 
 		// request the trafficLock mutex
 		pthread_mutex_lock(&trafficLock);
 		// Increment the number of cars in the tunnel
 		currentNumOfCarsInTunnel = currentNumOfCarsInTunnel + carCounter;
 		cout << "current number of cars in the tunnel:" << currentNumOfCarsInTunnel << endl; 
-		cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " is going through the tunnel" << endl;
-		pthread_cond_broadcast(&wakeUp);
-		pthread_mutex_unlock(&trafficLock);
+		cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " enters the tunnel" << endl;
 		// sleep the duration of the crossing time 
-		sleep(cars.exitTime);
-	    
+		sleep(cars.tunnelTime);
+		pthread_cond_signal(&wakeUp);
+		pthread_mutex_unlock(&trafficLock);
+		
 		// exiting the tunnel 
-		cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " is leaving the tunnel" << endl;
-	    
 		// Request trafficLock Mutex
 		// decrement the number of cars in the tunnel 
 		pthread_mutex_lock(&trafficLock);
+		cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " exits the tunnel" << endl;
 		currentNumOfCarsInTunnel = currentNumOfCarsInTunnel - carCounter;
 		cout << "current number of cars in the tunnel: " << currentNumOfCarsInTunnel << endl; 
-		pthread_cond_broadcast(&wakeUp);
+		pthread_cond_signal(&wakeUp);
 		pthread_mutex_unlock(&trafficLock);
 
 	} else if(trafficDirection != cars.isGoingTo && currentNumOfCarsInTunnel < maxNumOfCarsAllowedInTunnel) {	
 		// if needed then wait for a broadcast from tunnel 
-		cout << "Cars going to " << cars.isGoingTo << " are not allowed entry at this point in time " << endl;
+		cout << "\nCars going to " << cars.isGoingTo << " are not allowed entry at this point in time " << endl;
+		
+		pthread_mutex_lock(&trafficLock);
 		while(trafficDirection != cars.isGoingTo)
 			pthread_cond_wait(&wakeUp, &trafficLock);
+		pthread_mutex_unlock(&trafficLock);
 
+		// Entering the tunnel
+		pthread_mutex_lock(&trafficLock);
+		currentNumOfCarsInTunnel = currentNumOfCarsInTunnel + carCounter;
+		cout << "current number of cars in the tunnel:" << currentNumOfCarsInTunnel << endl; 
+		cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " enters the tunnel" << endl;
+		// sleep the duration of the crossing time 
+		sleep(cars.tunnelTime);
+		pthread_cond_signal(&wakeUp);
+		pthread_mutex_unlock(&trafficLock);
+
+		// exiting the tunnel 
+		// Request trafficLock Mutex
+		// decrement the number of cars in the tunnel 
+		pthread_mutex_lock(&trafficLock);
+		cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " exits the tunnel" << endl;
+		currentNumOfCarsInTunnel = currentNumOfCarsInTunnel - carCounter;
+		cout << "current number of cars in the tunnel: " << currentNumOfCarsInTunnel << endl; 
+		pthread_cond_signal(&wakeUp);
+		pthread_mutex_unlock(&trafficLock);
+		
+		
+		
+		cout << "test 1" << endl;
 		
 	} else {
 		// wait for a car leaving
@@ -156,8 +178,10 @@ void runProgram()
 
 	deque<pthread_t> listCarsForTunnel; 
 	
+	// spawning a new thread 
 	pthread_t tunnel; 
 	pthread_create (&tunnel, NULL, checkTunnelDirection, NULL); 
+
 	for (int i = 0; i < listOfCars.size(); i++)
 	{
 		sleep(listOfCars.at(i).arrivalTime);
@@ -166,6 +190,7 @@ void runProgram()
 		listCarsForTunnel.push_back(tid);
 	}
 
+	// waiting for them to finish
 	for (int i = 0; i < listCarsForTunnel.size(); i++)
 		pthread_join(listCarsForTunnel[i], NULL);
 
@@ -173,17 +198,10 @@ void runProgram()
 
 
  
-int main (int argc, char *argv[] )   //char *argv[])
+int main (int argc, char *argv[] )  
 {   
-
-	
-	// maxNumOfCarsAllowedInTunnel = atoi(argv[1]);
-	cout << "Max bridge load: " << maxNumOfCarsAllowedInTunnel << endl;
 	runProgram();
-
-
 	cout << "Total number of vehicles: " << carCounter << endl;
 
-   
 	return 0;
 }

@@ -6,6 +6,7 @@
         "string": "cpp",
         "string_view": "cpp",
         "vector": "cpp",
-        "locale": "cpp"
+        "locale": "cpp",
+        "__mutex_base": "cpp"
     }
 }
