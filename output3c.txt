@@ -1,16 +1,3 @@
-2
-0 WB 5
-1 WB 5
-1 WB 5
-1 BB 2
-1 WB 5
-
- 
-
-The correct ordering should be car #1, car #2, car #4, car #3 and, finally, car #5.
-
- 
-
 The tunnel is now open for Whittier-bound traffic.
 Car # 1 going to Whittier arrives at the tunnel.
 Car # 1 going to Whittier enters the tunnel.

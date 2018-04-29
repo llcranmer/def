@@ -38,9 +38,7 @@ struct vehicle
 
 // does not have access to the cars and their data ..
 void *checkTunnelDirection(void *arg){
-	
 	while(done == 0) { 
-
 		pthread_mutex_lock(&trafficLock);
 		trafficDirection = "WB";
 		cout << "The tunnel is now open to Whittier bound traffic. \n" << endl;
@@ -63,9 +61,7 @@ void *checkTunnelDirection(void *arg){
 		cout << "The tunnel is now closed to ALL traffic.\n" << endl;
 		pthread_mutex_unlock(&trafficLock);
 		sleep(5);
-		
 	}
-
 	pthread_exit(NULL);
 }
 
@@ -76,31 +72,27 @@ void *cars(void *arg)
 {
 	vehicle cars = *((vehicle*) arg);
 	// print message : "arrived at tunnel"
-	cout << "\nCar # " << cars.ID << " going to "<< cars.isGoingTo << " arrives at the tunnel"<< endl;
+	cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " arrives at the tunnel"<< endl;
+	// Case 1: The car is going the same direction as traffic and the tunnel has room 
     if(trafficDirection == cars.isGoingTo && currentNumOfCarsInTunnel < maxNumOfCarsAllowedInTunnel)
 	{	
-		// entering the tunnel 
-		// request the trafficLock mutex
+	
+		currentNumOfCarsInTunnel = currentNumOfCarsInTunnel + 1; 
+		cout << "Test 0: Current number of cars in the tunnel: " << currentNumOfCarsInTunnel << endl;
+		// car enters the tunnel 
 		pthread_mutex_lock(&trafficLock);
-		// Increment the number of cars in the tunnel
-		currentNumOfCarsInTunnel = currentNumOfCarsInTunnel + carCounter;
-		cout << "current number of cars in the tunnel:" << currentNumOfCarsInTunnel << endl; 
 		cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " enters the tunnel" << endl;
-		// sleep the duration of the crossing time 
 		sleep(cars.tunnelTime);
 		pthread_cond_signal(&wakeUp);
 		pthread_mutex_unlock(&trafficLock);
-		
-		// exiting the tunnel 
-		// Request trafficLock Mutex
-		// decrement the number of cars in the tunnel 
+
+		// sending the car out of the tunnel and signaling..
 		pthread_mutex_lock(&trafficLock);
-		cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " exits the tunnel" << endl;
-		currentNumOfCarsInTunnel = currentNumOfCarsInTunnel - carCounter;
-		cout << "current number of cars in the tunnel: " << currentNumOfCarsInTunnel << endl; 
+		cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " exits the tunnel" << endl; 
 		pthread_cond_signal(&wakeUp);
 		pthread_mutex_unlock(&trafficLock);
 
+		// Counting how many of each car goes to WB and BB. 
 		if(cars.isGoingTo == "WB"){
 			pthread_mutex_lock(&trafficLock);
 			NCarsWhittierBound = NCarsWhittierBound + 1;
@@ -114,24 +106,20 @@ void *cars(void *arg)
 			pthread_cond_signal(&wakeUp);
 			pthread_mutex_unlock(&trafficLock);
 		} 
-		
-
-
-
+	// Case 2: The car is not going the same direction as traffic and there is not enough room 
 	} else if(trafficDirection != cars.isGoingTo && currentNumOfCarsInTunnel < maxNumOfCarsAllowedInTunnel) {	
+		
 		// if needed then wait for a broadcast from tunnel 
 		cout << "\nCars going to " << cars.isGoingTo << " are not allowed entry at this point in time " << endl;
-		
+		// Wait until the cars are allowed to travel 
 		pthread_mutex_lock(&trafficLock);
 		while(trafficDirection != cars.isGoingTo)
 			pthread_cond_wait(&wakeUp, &trafficLock);
 		pthread_mutex_unlock(&trafficLock);
 
 		// Entering the tunnel
-		pthread_mutex_lock(&trafficLock);
-		currentNumOfCarsInTunnel = currentNumOfCarsInTunnel + carCounter;
-		cout << "current number of cars in the tunnel:" << currentNumOfCarsInTunnel << endl; 
-		cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " enters the tunnel" << endl;
+		pthread_mutex_lock(&trafficLock); 
+		cout << "\nCar # " << cars.ID << " going to "<< cars.isGoingTo << " enters the tunnel" << endl;
 		// sleep the duration of the crossing time 
 		sleep(cars.tunnelTime);
 		pthread_cond_signal(&wakeUp);
@@ -140,8 +128,6 @@ void *cars(void *arg)
 		// exiting the tunnel  Request trafficLock Mutex  decrement the number of cars in the tunnel 
 		pthread_mutex_lock(&trafficLock);
 		cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " exits the tunnel" << endl;
-		currentNumOfCarsInTunnel = currentNumOfCarsInTunnel - carCounter;
-		cout << "current number of cars in the tunnel: " << currentNumOfCarsInTunnel << endl; 
 		pthread_cond_signal(&wakeUp);
 		pthread_mutex_unlock(&trafficLock);
 
@@ -159,18 +145,17 @@ void *cars(void *arg)
 			pthread_mutex_unlock(&trafficLock);
 		} 
 		
-		
 	} else {
-		// wait for a car leaving
+		// Case 3: The  tunnel is full and it must be delayed.
 		cout << "The tunnel is full therefore you must wait!" << endl; 
-		while((carCounter + currentNumOfCarsInTunnel) > maxNumOfCarsAllowedInTunnel) // and direction as well
+		NDelayedCars = NDelayedCars + 1; 
+		pthread_mutex_lock(&trafficLock);
+		while((currentNumOfCarsInTunnel) > maxNumOfCarsAllowedInTunnel) // and direction as well
 			pthread_cond_wait(&wakeUp, &trafficLock);
 		pthread_mutex_unlock(&trafficLock);
 
 		// Entering the tunnel
 		pthread_mutex_lock(&trafficLock);
-		currentNumOfCarsInTunnel = currentNumOfCarsInTunnel + carCounter;
-		cout << "current number of cars in the tunnel:" << currentNumOfCarsInTunnel << endl; 
 		cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " enters the tunnel" << endl;
 		// sleep the duration of the crossing time 
 		sleep(cars.tunnelTime);
@@ -178,12 +163,8 @@ void *cars(void *arg)
 		pthread_mutex_unlock(&trafficLock);
 
 		// exiting the tunnel 
-		// Request trafficLock Mutex
-		// decrement the number of cars in the tunnel 
 		pthread_mutex_lock(&trafficLock);
 		cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " exits the tunnel" << endl;
-		currentNumOfCarsInTunnel = currentNumOfCarsInTunnel - carCounter;
-		cout << "current number of cars in the tunnel: " << currentNumOfCarsInTunnel << endl; 
 		pthread_cond_signal(&wakeUp);
 		pthread_mutex_unlock(&trafficLock);
 
@@ -202,10 +183,8 @@ void *cars(void *arg)
 		} 
 
 	}
-
 	pthread_exit(NULL);
 
-	
 }
 
 
@@ -259,8 +238,9 @@ void runProgram()
 int main (int argc, char *argv[] )  
 {   
 	runProgram();
-	cout << "Total number of vehicles: " << carCounter << endl;
+	// cout << "Total number of vehicles: " << carCounter << endl;
 	cout << NCarsBearValleyBound << " car(s) going to Bear Valley arrived at the tunnel " << endl; 
 	cout << NCarsWhittierBound << " car(s) going to Whittier arrived at the tunnel " << endl; 
+	cout << NDelayedCars << " car(s) were delayed " << endl; 
 	return 0;
 }
