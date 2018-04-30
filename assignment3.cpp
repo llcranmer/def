@@ -41,30 +41,62 @@ void *checkTunnelDirection(void *arg){
 	while(done == 0) { 
 		pthread_mutex_lock(&trafficLock);
 		trafficDirection = "WB";
-		cout << "The tunnel is now open to Whittier bound traffic. \n" << endl;
+		cout << "\nThe tunnel is now open to Whittier bound traffic. \n" << endl;
 		pthread_cond_broadcast(&wakeUp);
 		pthread_mutex_unlock(&trafficLock);
 		sleep(5);
 	
 		trafficDirection = "N";
-		cout << "The tunnel is now closed to ALL traffic.\n" << endl;
+		cout << "\nThe tunnel is now closed to ALL traffic.\n" << endl;
 		pthread_mutex_unlock(&trafficLock);
 		sleep(5);
 	
-		cout << "The tunnel is now open to Bear Valley bound traffic. \n" << endl;
+		cout << "\nThe tunnel is now open to Bear Valley bound traffic. \n" << endl;
 		trafficDirection ="BB";
 		pthread_cond_broadcast(&wakeUp);
 		pthread_mutex_unlock(&trafficLock);
 		sleep(5);
 
 		trafficDirection = "N";
-		cout << "The tunnel is now closed to ALL traffic.\n" << endl;
+		cout << "\nThe tunnel is now closed to ALL traffic.\n" << endl;
 		pthread_mutex_unlock(&trafficLock);
 		sleep(5);
 	}
 	pthread_exit(NULL);
 }
 
+void destBoundCount(struct vehicle cars){
+	if(cars.isGoingTo == "WB"){
+		pthread_mutex_lock(&trafficLock);
+		NCarsWhittierBound = NCarsWhittierBound + 1;
+		pthread_cond_signal(&wakeUp);
+		pthread_mutex_unlock(&trafficLock);
+	}
+	if (cars.isGoingTo == "BB"){
+		pthread_mutex_lock(&trafficLock);
+		NCarsBearValleyBound = NCarsBearValleyBound + 1;
+		pthread_cond_signal(&wakeUp);
+		pthread_mutex_unlock(&trafficLock);
+	} 
+}
+
+
+void enterTunnel(struct vehicle cars){
+	pthread_mutex_lock(&trafficLock);
+	currentNumOfCarsInTunnel = currentNumOfCarsInTunnel + 1; 
+	cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " enters the tunnel" << endl;
+	sleep(cars.tunnelTime);
+	pthread_cond_signal(&wakeUp);
+	pthread_mutex_unlock(&trafficLock);
+}
+
+void exitTunnel(struct vehicle cars){
+	pthread_mutex_lock(&trafficLock);
+	cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " exits the tunnel" << endl; 
+	currentNumOfCarsInTunnel = currentNumOfCarsInTunnel - 1; 
+	pthread_cond_signal(&wakeUp);
+	pthread_mutex_unlock(&trafficLock);
+}
 
 // has access to each individual and it's data 
 // is the concurrent function 
@@ -73,44 +105,23 @@ void *cars(void *arg)
 	vehicle cars = *((vehicle*) arg);
 	// print message : "arrived at tunnel"
 	cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " arrives at the tunnel"<< endl;
+	
 	// Case 1: The car is going the same direction as traffic and the tunnel has room 
     if(trafficDirection == cars.isGoingTo && currentNumOfCarsInTunnel < maxNumOfCarsAllowedInTunnel)
 	{	
 	
-		currentNumOfCarsInTunnel = currentNumOfCarsInTunnel + 1; 
-		cout << "Test 0: Current number of cars in the tunnel: " << currentNumOfCarsInTunnel << endl;
 		// car enters the tunnel 
-		pthread_mutex_lock(&trafficLock);
-		cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " enters the tunnel" << endl;
-		sleep(cars.tunnelTime);
-		pthread_cond_signal(&wakeUp);
-		pthread_mutex_unlock(&trafficLock);
-
+		enterTunnel(cars);
 		// sending the car out of the tunnel and signaling..
-		pthread_mutex_lock(&trafficLock);
-		cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " exits the tunnel" << endl; 
-		pthread_cond_signal(&wakeUp);
-		pthread_mutex_unlock(&trafficLock);
-
+		exitTunnel(cars);
 		// Counting how many of each car goes to WB and BB. 
-		if(cars.isGoingTo == "WB"){
-			pthread_mutex_lock(&trafficLock);
-			NCarsWhittierBound = NCarsWhittierBound + 1;
-			pthread_cond_signal(&wakeUp);
-			pthread_mutex_unlock(&trafficLock);
-
-		}
-		if (cars.isGoingTo == "BB"){
-			pthread_mutex_lock(&trafficLock);
-			NCarsBearValleyBound = NCarsBearValleyBound + 1;
-			pthread_cond_signal(&wakeUp);
-			pthread_mutex_unlock(&trafficLock);
-		} 
+		destBoundCount(cars);
+		
 	// Case 2: The car is not going the same direction as traffic and there is not enough room 
 	} else if(trafficDirection != cars.isGoingTo && currentNumOfCarsInTunnel < maxNumOfCarsAllowedInTunnel) {	
 		
 		// if needed then wait for a broadcast from tunnel 
-		cout << "\nCars going to " << cars.isGoingTo << " are not allowed entry at this point in time " << endl;
+		//cout << "\nCars going to " << cars.isGoingTo << " are not allowed entry at this point in time " << endl;
 		// Wait until the cars are allowed to travel 
 		pthread_mutex_lock(&trafficLock);
 		while(trafficDirection != cars.isGoingTo)
@@ -118,40 +129,22 @@ void *cars(void *arg)
 		pthread_mutex_unlock(&trafficLock);
 
 		// Entering the tunnel
-		pthread_mutex_lock(&trafficLock); 
-		cout << "\nCar # " << cars.ID << " going to "<< cars.isGoingTo << " enters the tunnel" << endl;
-		// sleep the duration of the crossing time 
-		sleep(cars.tunnelTime);
-		pthread_cond_signal(&wakeUp);
-		pthread_mutex_unlock(&trafficLock);
+		enterTunnel(cars);
 
 		// exiting the tunnel  Request trafficLock Mutex  decrement the number of cars in the tunnel 
-		pthread_mutex_lock(&trafficLock);
-		cout << "Car # " << cars.ID << " going to "<< cars.isGoingTo << " exits the tunnel" << endl;
-		pthread_cond_signal(&wakeUp);
-		pthread_mutex_unlock(&trafficLock);
-
-		if(cars.isGoingTo == "WB"){
-			pthread_mutex_lock(&trafficLock);
-			NCarsWhittierBound = NCarsWhittierBound + 1;
-			pthread_cond_signal(&wakeUp);
-			pthread_mutex_unlock(&trafficLock);
-
-		}
-		if (cars.isGoingTo == "BB"){
-			pthread_mutex_lock(&trafficLock);
-			NCarsBearValleyBound = NCarsBearValleyBound + 1;
-			pthread_cond_signal(&wakeUp);
-			pthread_mutex_unlock(&trafficLock);
-		} 
+		exitTunnel(cars);
+		// counting the destination of each car
+		destBoundCount(cars);
 		
 	} else {
+
 		// Case 3: The  tunnel is full and it must be delayed.
 		cout << "The tunnel is full therefore you must wait!" << endl; 
-		NDelayedCars = NDelayedCars + 1; 
 		pthread_mutex_lock(&trafficLock);
 		while((currentNumOfCarsInTunnel) > maxNumOfCarsAllowedInTunnel) // and direction as well
 			pthread_cond_wait(&wakeUp, &trafficLock);
+		NDelayedCars = NDelayedCars + 1;
+		cout << "\nCurrent number of Delayed cars is: " << NDelayedCars << endl; 
 		pthread_mutex_unlock(&trafficLock);
 
 		// Entering the tunnel
@@ -168,23 +161,9 @@ void *cars(void *arg)
 		pthread_cond_signal(&wakeUp);
 		pthread_mutex_unlock(&trafficLock);
 
-		if(cars.isGoingTo == "WB"){
-			pthread_mutex_lock(&trafficLock);
-			NCarsWhittierBound = NCarsWhittierBound + 1;
-			pthread_cond_signal(&wakeUp);
-			pthread_mutex_unlock(&trafficLock);
-
-		}
-		if (cars.isGoingTo == "BB"){
-			pthread_mutex_lock(&trafficLock);
-			NCarsBearValleyBound = NCarsBearValleyBound + 1;
-			pthread_cond_signal(&wakeUp);
-			pthread_mutex_unlock(&trafficLock);
-		} 
-
+		destBoundCount(cars);
 	}
 	pthread_exit(NULL);
-
 }
 
 
@@ -209,7 +188,6 @@ void runProgram()
         stream >> car.arrivalTime  >>  car.isGoingTo >> car.tunnelTime;
 		carCounter++;
 		car.ID = std::to_string(carCounter);
-        
 		// add cars to dequeue 
 		listOfCars.push_back(car);
 	}
