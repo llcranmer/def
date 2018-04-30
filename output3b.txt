@@ -30,6 +30,7 @@ Car # 4 going to Whittier exits the tunnel.
 Car # 8 going to Whittier enters the tunnel.
 Car # 5 going to Whittier exits the tunnel.
 The tunnel is now closed to ALL traffic.
+
 Car # 8 going to Whittier exits the tunnel.
 4 car(s) going to Bear Valley arrived at the tunnel.
 5 car(s) going to Whittier arrived at the tunnel.
