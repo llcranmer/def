@@ -43,7 +43,7 @@ void *checkTunnelDirection(void *arg) {
 		
 		pthread_mutex_lock(&trafficLock);
 		trafficDirection = "WB";
-		cout << "\nThe tunnel is now open to Whittier-bound traffic. \n" << endl;
+		cout << "The tunnel is now open to Whittier-bound traffic. \n" << endl;
 		pthread_cond_broadcast(&specialWakeUp);
 		pthread_cond_broadcast(&wakeUp);
 		pthread_mutex_unlock(&trafficLock);
@@ -51,12 +51,12 @@ void *checkTunnelDirection(void *arg) {
 	
 		pthread_mutex_lock(&trafficLock);
 		trafficDirection = "N";
-		cout << "\nThe tunnel is now closed to ALL traffic.\n" << endl;
+		cout << "The tunnel is now closed to ALL traffic.\n" << endl;
 		pthread_mutex_unlock(&trafficLock);
 		sleep(5);
 	
 		pthread_mutex_lock(&trafficLock);
-		cout << "\nThe tunnel is now open to Bear Valley-bound traffic. \n" << endl;
+		cout << "The tunnel is now open to Bear Valley-bound traffic. \n" << endl;
 		trafficDirection ="BB";
 		pthread_cond_broadcast(&specialWakeUp);
 		pthread_cond_broadcast(&wakeUp);
@@ -66,7 +66,7 @@ void *checkTunnelDirection(void *arg) {
 
 		pthread_mutex_lock(&trafficLock);
 		trafficDirection = "N";
-		cout << "\nThe tunnel is now closed to ALL traffic.\n" << endl;
+		cout << "The tunnel is now closed to ALL traffic.\n" << endl;
 		pthread_mutex_unlock(&trafficLock);
 		sleep(5);
 	}

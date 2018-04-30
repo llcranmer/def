@@ -1,7 +1,41 @@
-
 The tunnel is now open to Whittier-bound traffic. 
 
 Car # 1 going to Whittier arrives at the tunnel
 Car # 1 going to Whittier enters the tunnel
 Car # 2 going to Whittier arrives at the tunnel
 Car # 2 going to Whittier enters the tunnel
+Car # 1 going to Whittier exits the tunnel
+Car # 3 going to Bear Valley arrives at the tunnel
+The tunnel is now closed to ALL traffic.
+
+Car # 2 going to Whittier exits the tunnel
+Car # 4 going to Whittier arrives at the tunnel
+Car # 5 going to Whittier arrives at the tunnel
+Car # 6 going to Bear Valley arrives at the tunnel
+The tunnel is now open to Bear Valley-bound traffic. 
+
+Car # 3 going to Bear Valley enters the tunnel
+Car # 6 going to Bear Valley enters the tunnel
+Car # 7 going to Bear Valley arrives at the tunnel
+Car # 7 going to Bear Valley enters the tunnel
+Car # 8 going to Whittier arrives at the tunnel
+Car # 6 going to Bear Valley exits the tunnel
+Car # 3 going to Bear Valley exits the tunnel
+Car # 7 going to Bear Valley exits the tunnel
+Car # 9 going to Bear Valley arrives at the tunnel
+Car # 9 going to Bear Valley enters the tunnel
+The tunnel is now closed to ALL traffic.
+
+Car # 9 going to Bear Valley exits the tunnel
+The tunnel is now open to Whittier-bound traffic. 
+
+Car # 8 going to Whittier enters the tunnel
+Car # 4 going to Whittier enters the tunnel
+Car # 5 going to Whittier enters the tunnel
+Car # 4 going to Whittier exits the tunnel
+Car # 5 going to Whittier exits the tunnel
+Car # 8 going to Whittier exits the tunnel
+
+4 car(s) going to Bear Valley arrived at the tunnel 
+5 car(s) going to Whittier arrived at the tunnel 
+1 car(s) were delayed 

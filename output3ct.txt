@@ -1,4 +1,5 @@
 The tunnel is now open to Whittier-bound traffic. 
+
 Car # 1 going to Whittier arrives at the tunnel
 Car # 1 going to Whittier enters the tunnel
 Car # 1 going to Whittier exits the tunnel
@@ -6,8 +7,10 @@ Car # 2 going to Bear Valley arrives at the tunnel
 Car # 3 going to Whittier arrives at the tunnel
 Car # 3 going to Whittier enters the tunnel
 The tunnel is now closed to ALL traffic.
+
 Car # 3 going to Whittier exits the tunnel
 The tunnel is now open to Bear Valley-bound traffic. 
+
 Car # 2 going to Bear Valley enters the tunnel
 Car # 2 going to Bear Valley exits the tunnel
 
